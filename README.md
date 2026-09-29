@@ -1,25 +1,29 @@
-# 3陸特 Reviewer
+<p align="center">
+  <img src="favicon.svg" width="72" alt="">
+</p>
 
-A study app for the **第三級陸上特殊無線技士** (3rd Class Land Special Radio Operator) exam in Japan.
+<h1 align="center">3陸特 Reviewer</h1>
 
-## Features
+<p align="center">
+  📻 Practice app for the <b>第三級陸上特殊無線技士</b> (3rd Class Land Special Radio Operator) exam<br>
+  <a href="https://jpalmonte.github.io/sanrikutoku-reviewer/"><b>▶ Open the app</b></a>
+</p>
 
-- **132 practice questions**, split into 無線工学 (technical, 60) and 法規 (radio law, 72), with questions and answer choices shuffled
-- **Mock exams scored like the real exam:** 12 questions per subject at 5 points each (60 total), pass mark 40 per subject; the exam is passed when both subjects pass
-- **Instant feedback:** the correct answer plus Japanese and English explanations
-- **English translation** of every question and answer choice
-- **Hover popups** showing furigana and English meanings for kanji, in questions, choices and explanations
-- **Vocabulary list** of 544 words in three categories (Technical 137, Law 167, General 240), with search and a self-quiz mode
+## ✨ Features
 
-## Running it
+- 🎲 **132 shuffled questions**: 無線工学 (technical, 60) and 法規 (radio law, 72)
+- 📝 **Mock exams scored like the real one**: 12 questions × 5 pts per subject, pass mark **40/60** in each
+- ✅ **Instant feedback** with Japanese and 🇬🇧 English explanations
+- 🈯 **Hover popups** with furigana and meanings for every kanji
+- 📚 **Vocabulary list**: 544 words (Technical 137 · Law 167 · General 240)
 
-It's a static site with no build step. Open `index.html` in a browser, or serve the folder with any static host (GitHub Pages serves it as-is).
+## 🚀 Run it
 
-Progress is saved in your browser's local storage.
+Open `index.html` in a browser. It's a static site with no build step, and progress is saved in your browser.
 
-## Sources
+## 📖 Sources
 
-- Questions, answer keys, Japanese explanations and diagrams: [そうだったのか！わかる無線通信技術](https://funfun-wireless-communication.com/category/3riku_exercise/) (past exams from R3.6, R3.10 and R4.2, and practice sets No.1–3)
-- Exam format and passing standards: [日本無線協会 試験科目・合格基準等](https://www.nichimu.or.jp/kshiken/shiryou/index.html)
+- Questions and explanations: [そうだったのか！わかる無線通信技術](https://funfun-wireless-communication.com/category/3riku_exercise/)
+- Exam rules: [日本無線協会](https://www.nichimu.or.jp/kshiken/shiryou/index.html)
 
-English translations, English explanations for questions without one, and the vocabulary lists were added for this reviewer. They are study aids, not official wording.
+English translations and vocabulary were added for study. They are not official wording.
