@@ -1,0 +1,570 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3陸特 Reviewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --bg:#EEF1EF; --surface:#FFFFFF; --sunk:#E3E8E5; --ink:#15212B; --muted:#5A6873; --line:#CCD5D1;
+  --accent:#B8661A; --accent-soft:#F6E6D3; --accent-ink:#FFFFFF;
+  --ok:#2E7A4C; --ok-soft:#DDF0E3; --bad:#B23B32; --bad-soft:#F8E0DD;
+  --tech:#2F6690; --law:#7A4E8C;
+  --shadow:0 1px 2px rgba(21,33,43,.06),0 4px 16px rgba(21,33,43,.06);
+  --jp:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0F161C; --surface:#172129; --sunk:#1F2B35; --ink:#E3E9ED; --muted:#93A2AD; --line:#2C3A45;
+  --accent:#E39A4B; --accent-soft:#3A2A1A; --accent-ink:#1A1208;
+  --ok:#5DBB85; --ok-soft:#173026; --bad:#EE7D72; --bad-soft:#3A1E1C;
+  --tech:#7FB2DA; --law:#C49BD6; --shadow:none;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F161C; --surface:#172129; --sunk:#1F2B35; --ink:#E3E9ED; --muted:#93A2AD; --line:#2C3A45;
+  --accent:#E39A4B; --accent-soft:#3A2A1A; --accent-ink:#1A1208;
+  --ok:#5DBB85; --ok-soft:#173026; --bad:#EE7D72; --bad-soft:#3A1E1C;
+  --tech:#7FB2DA; --law:#C49BD6; --shadow:none;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--jp);font-size:16px;line-height:1.7;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:820px;margin:0 auto}
+header{padding-block:28px 12px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px}
+h1{font-size:clamp(26px,5vw,34px);font-weight:900;letter-spacing:.01em;margin:0;line-height:1.2;text-wrap:balance}
+h1 small{display:block;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.dial{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;padding-block:10px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab .n{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab[aria-selected="true"] .n{color:inherit;opacity:.7}
+.tab:focus-visible,.btn:focus-visible,.opt:focus-visible,summary:focus-visible,input:focus-visible,.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* score + band */
+.status{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:10px}
+.status b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.status .ok b{color:var(--ok)} .status .bad b{color:var(--bad)}
+.exam{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:grid;gap:8px}
+.rline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.rtitle{font-weight:700;font-size:15px}
+.rq,.rnote{font-size:13px;color:var(--muted)}
+.rpts{font-family:var(--mono);font-size:14px;color:var(--muted)} .rpts b{color:var(--ink);font-size:18px;font-variant-numeric:tabular-nums}
+.meter{position:relative;height:10px;border-radius:5px;background:var(--sunk);overflow:visible}
+.meter .fill{height:100%;border-radius:5px;background:var(--accent);transition:width .2s}
+.meter .fill.pass{background:var(--ok)}
+.meter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.55}
+.chip-res{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.chip-res.pass{background:var(--ok-soft);color:var(--ok)}
+.chip-res.fail{background:var(--bad-soft);color:var(--bad)}
+.chip-res.prog{background:var(--accent-soft);color:var(--accent)}
+.overall{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;border-top:1px solid var(--line);padding-top:10px;margin-top:2px}
+.overall .rtitle{font-size:13px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sub{font-size:13px;color:var(--muted)} .sub b{font-variant-numeric:tabular-nums}
+.sub.ok{color:var(--ok)} .sub.bad{color:var(--bad)} .sub em{font-style:normal;opacity:.8}
+.band{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.round{display:grid;grid-template-columns:44px repeat(12,minmax(10px,1fr));gap:3px;align-items:center}
+.round.practice{grid-template-columns:repeat(auto-fill,minmax(14px,1fr))}
+.rlab{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.rlab.pass{color:var(--ok)} .rlab.fail{color:var(--bad)}
+.cell{height:18px;border-radius:3px;background:var(--sunk);border:0;padding:0;cursor:pointer}
+.cell.ok{background:var(--ok)} .cell.bad{background:var(--bad)}
+.cell.cur{box-shadow:0 0 0 2px var(--accent)}
+
+/* card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:22px clamp(16px,4vw,28px)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:12px}
+.pill{font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:4px;border:1px solid currentColor}
+.pill.tech{color:var(--tech)} .pill.law{color:var(--law)}
+.meta a{color:var(--muted)}
+.qtext{font-size:18px;font-weight:500;margin:0 0 14px;line-height:1.8}
+.qtext img,.figure img,.expl img{display:block;max-width:100%;height:auto;margin:12px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px}
+.qtext div{text-align:center}
+.opts{display:grid;gap:8px;margin:16px 0 0}
+.opt{appearance:none;display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:start;text-align:left;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;cursor:pointer;transition:border-color .12s,background .12s}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .num{font-family:var(--mono);font-weight:600;color:var(--muted);line-height:1.7}
+.opt .mark{font-family:var(--mono);font-size:12px;font-weight:600;line-height:1.9;white-space:nowrap}
+.opt:disabled{cursor:default}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+.opt.correct .num,.opt.correct .mark{color:var(--ok)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .num,.opt.wrong .mark{color:var(--bad)}
+.opt.dim{opacity:.55}
+.verdict{margin-top:16px;padding:12px 14px;border-radius:10px;font-weight:700}
+.verdict.ok{background:var(--ok-soft);color:var(--ok)}
+.verdict.bad{background:var(--bad-soft);color:var(--bad)}
+.verdict .ans{display:block;font-weight:500;color:var(--ink);margin-top:4px}
+.expl{margin-top:12px;font-size:15px;color:var(--ink);border-left:3px solid var(--accent);padding-left:14px;display:grid;gap:4px}
+.expl b{font-weight:500}
+.expl p{margin:.4em 0}
+.xlabel{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:8px}
+.xlabel:first-child{margin-top:0}
+.xlabel .added{text-transform:none;letter-spacing:0;font-weight:400;opacity:.85}
+.en-x{line-height:1.65}
+.kw{border-bottom:1.5px dotted var(--accent);cursor:help;border-radius:2px}
+.kw:hover,.kw:focus{background:var(--accent-soft);outline:none}
+#tip{position:fixed;z-index:50;max-width:min(300px,calc(100vw - 16px));background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 12px 9px;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none;display:grid;gap:2px;text-align:center}
+#tip ruby{font-size:22px;font-weight:700;line-height:1.2;ruby-position:over}
+#tip rt{font-size:12px;font-weight:500;opacity:.8;letter-spacing:.04em}
+#tip .tm{font-size:13px;line-height:1.4}
+details.en{margin-top:18px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+details.en summary{cursor:pointer;padding:10px 14px;font-weight:700;font-size:14px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.en summary::-webkit-details-marker{display:none}
+details.en summary::after{content:"▾";color:var(--muted);transition:transform .15s}
+details.en[open] summary::after{transform:rotate(180deg)}
+.en-body{padding:0 14px 14px;font-size:15px}
+.en-body h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px;font-weight:600}
+.en-body p{margin:0}
+.en-body ol{margin:0;padding-left:0;list-style:none;display:grid;gap:4px}
+.en-body ol li{display:grid;grid-template-columns:30px 1fr;gap:10px}
+.en-body ol li span{font-family:var(--mono);color:var(--muted)}
+.en-body ol li.is-ans{color:var(--ok);font-weight:500}
+.vmini{width:100%;border-collapse:collapse;font-size:14px}
+.vmini td{padding:5px 8px 5px 0;border-top:1px solid var(--line);vertical-align:top}
+.vmini td:first-child{font-weight:700;white-space:nowrap}
+.vmini td:nth-child(2){color:var(--muted);white-space:nowrap}
+.vwrap{overflow-x:auto}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin-top:16px}
+.controls .grp{display:flex;gap:8px;flex-wrap:wrap}
+.btn{appearance:none;font:inherit;font-size:14px;font-weight:700;border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.4;cursor:default}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+
+/* vocab */
+.vtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.vtools input[type=search]{flex:1 1 220px;min-width:0;font:inherit;font-size:15px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.chip{appearance:none;font:inherit;font-size:13px;font-weight:700;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .cn{font-family:var(--mono);font-size:12px;font-weight:600;opacity:.65;font-variant-numeric:tabular-nums}
+label.hide{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer}
+.vtable-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table.vocab{width:100%;border-collapse:collapse;font-size:15px}
+table.vocab th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+table.vocab td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.vocab tr:last-child td{border-bottom:0}
+table.vocab td.w{font-size:18px;font-weight:700;white-space:nowrap}
+table.vocab td.r{color:var(--muted);white-space:nowrap}
+table.vocab td.c{font-family:var(--mono);font-size:12px;white-space:nowrap}
+table.vocab td.c.tech{color:var(--tech)} table.vocab td.c.law{color:var(--law)} table.vocab td.c.gen{color:var(--muted)}
+table.vocab tr.sec td{background:var(--sunk);padding:10px 12px;font-weight:700;font-size:14px}
+table.vocab tr.sec em{font-style:normal;font-weight:400;font-size:12px;color:var(--muted);margin-left:6px}
+table.vocab td.n{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.masked td.m,.masked td.r{color:transparent;background:var(--sunk);border-radius:4px;cursor:pointer;user-select:none}
+.masked tr.peek td.m,.masked tr.peek td.r{color:var(--ink);background:none}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+footer{margin-top:28px;font-size:13px;color:var(--muted)}
+footer a{color:var(--muted)}
+@media (max-width:520px){
+  .qtext{font-size:17px}
+  table.vocab td.n,table.vocab th.n{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><small>第三級陸上特殊無線技士 · Exam Reviewer</small>3陸特 Reviewer</h1>
+    <div class="dial">132 questions · 11 sets · randomized</div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-tech" data-view="tech" aria-selected="true">無線工学 Technical <span class="n" id="n-tech"></span></button>
+    <button class="tab" role="tab" id="tab-law" data-view="law" aria-selected="false">法規 Radio Law <span class="n" id="n-law"></span></button>
+    <button class="tab" role="tab" id="tab-vocab" data-view="vocab" aria-selected="false">単語 Vocabulary <span class="n" id="n-vocab"></span></button>
+  </nav>
+
+  <section id="quiz" role="tabpanel">
+    <div class="status" id="status"></div>
+    <div class="exam" id="exam" aria-live="polite"></div>
+    <div class="band" id="band" aria-label="Question map"></div>
+    <article class="card" id="card"></article>
+    <div class="controls">
+      <div class="grp">
+        <button class="btn" id="prev">← Prev</button>
+        <button class="btn primary" id="next">Next →</button>
+      </div>
+      <div class="grp">
+        <button class="btn" id="retry">Retry missed</button>
+        <button class="btn" id="shuffle">Reshuffle</button>
+      </div>
+    </div>
+    <p class="note">Scoring follows the official 3陸特 rules from 日本無線協会: each subject is 12 questions at 5 points (60 total), and the pass mark is 40 points per subject. The exam is passed when both 無線工学 and 法規 are passed, so questions are grouped into 12-question mock exams. Questions and answer choices are shuffled. Pick an answer to check it; open “English &amp; vocabulary” under any question for a translation and the kanji it uses. Hover over (or tap) a dotted-underlined word to see its furigana and meaning.</p>
+  </section>
+
+  <section id="vocabView" role="tabpanel" hidden>
+    <div class="vtools">
+      <input type="search" id="vsearch" placeholder="Search kanji, reading, or English…" aria-label="Search vocabulary">
+      <button class="chip" data-f="all" aria-pressed="true">All</button>
+      <button class="chip" data-f="tech" aria-pressed="false">Technical</button>
+      <button class="chip" data-f="law" aria-pressed="false">Law</button>
+      <button class="chip" data-f="gen" aria-pressed="false">General</button>
+      <label class="hide"><input type="checkbox" id="vmask"> Quiz me (hide reading &amp; meaning)</label>
+    </div>
+    <div class="vtable-wrap"><table class="vocab" id="vtable">
+      <thead><tr><th>漢字</th><th>Reading</th><th>Meaning</th><th>Type</th><th class="n">Qs</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="note" id="vcount"></p>
+  </section>
+
+  <footer>Questions and explanations from <a href="https://funfun-wireless-communication.com/category/3riku_exercise/" target="_blank" rel="noopener">そうだったのか！わかる無線通信技術</a> (past exams R3.6, R3.10, R4.2 and practice sets No.1–3). English translations and vocabulary added for study.</footer>
+</div>
+
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']]},svg:{fontCache:'global'},startup:{typeset:false}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" async></script>
+<script src="data.js" charset="utf-8"></script>
+<script>
+(function(){
+const Q=window.QUESTIONS, V=window.VOCAB;
+// In explanations, skip one-kanji general words (日, 下, 方…) — outside the questions they are often part of other words.
+const EXPL_WORDS=V.filter(w=>w.c!=='gen'||w.w.length>1);
+const CAT={tech:'Technical',law:'Law',gen:'General'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY='riku3-reviewer-v1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+const pools={tech:[],law:[]};
+Q.forEach((q,i)=>pools[q.c].push(i));
+$('#n-tech').textContent=pools.tech.length;
+$('#n-law').textContent=pools.law.length;
+$('#n-vocab').textContent=V.length;
+
+let state=load();
+function fresh(cat,ids){
+  const list=shuffle(ids||pools[cat]).map(i=>({i,p:shuffle([0,1,2,3]),pick:null}));
+  return {list,pos:0};
+}
+['tech','law'].forEach(c=>{
+  const s=state[c];
+  if(!s||!Array.isArray(s.list)||!s.list.length||s.list.some(x=>!Q[x.i]||Q[x.i].c!==c)) state[c]=fresh(c);
+});
+if(!['tech','law','vocab'].includes(state.view)) state.view='tech';
+if(['tech','law','vocab'].includes(location.hash.slice(1))) state.view=location.hash.slice(1);
+
+function setView(v){
+  state.view=v; save();
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.view===v));
+  $('#quiz').hidden=v==='vocab'; $('#vocabView').hidden=v!=='vocab';
+  if(v==='vocab') renderVocab(); else renderQuiz();
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>setView(t.dataset.view)));
+
+function S(){return state[state.view]}
+
+// Official 3陸特 scoring (日本無線協会): each subject is 12 questions × 5 points = 60; pass mark 40 (8 correct).
+// A subject passes on its own; the exam is passed when both 無線工学 and 法規 pass.
+const EXAM={n:12,pts:5,full:60,pass:40};
+function roundScore(items){
+  const ans=items.filter(x=>x.pick!==null), ok=ans.filter(x=>x.pick===Q[x.i].a).length;
+  const left=items.length-ans.length, pts=ok*EXAM.pts;
+  return {pts,ok,left,done:left===0,passed:pts>=EXAM.pass,need:Math.max(0,EXAM.pass-pts),
+    reachable:pts+left*EXAM.pts>=EXAM.pass};
+}
+function rounds(s){
+  if(s.practice) return [];
+  const r=[]; for(let i=0;i+EXAM.n<=s.list.length;i+=EXAM.n) r.push(s.list.slice(i,i+EXAM.n)); return r;
+}
+// Latest finished mock exam per subject (the round you most recently completed).
+function subjectResult(cat){
+  const s=state[cat]; if(!s) return null;
+  const rs=rounds(s).map((items,k)=>({k,...roundScore(items)})).filter(r=>r.done);
+  return rs.length?rs[rs.length-1]:null;
+}
+const need=(pts)=>`${pts} more point${pts===1?'':'s'} (${pts/EXAM.pts} more correct answer${pts/EXAM.pts===1?'':'s'})`;
+function renderExam(){
+  const s=S(), rs=rounds(s), el=$('#exam');
+  // this subject's current round
+  let cur='';
+  if(!rs.length){
+    cur=`<div class="rline"><span class="rtitle">Practice list</span><span class="rnote">Retrying missed questions isn't scored as a mock exam. Reshuffle to start mock exams again.</span></div>`;
+  } else {
+    const k=Math.min(Math.floor(s.pos/EXAM.n),rs.length-1), r=roundScore(rs[k]);
+    let verdict;
+    if(r.passed) verdict=`<span class="chip-res pass">合格 Passed</span>`;
+    else if(r.done) verdict=`<span class="chip-res fail">不合格 Not passed</span><span class="rnote">Needed ${need(r.need)} to pass.</span>`;
+    else if(!r.reachable) verdict=`<span class="chip-res fail">Can't pass this round</span><span class="rnote">Even with all ${r.left} remaining correct you'd reach ${r.pts+r.left*EXAM.pts}.</span>`;
+    else verdict=`<span class="chip-res prog">In progress</span><span class="rnote">Need ${need(r.need)} to pass · ${r.left} question${r.left===1?'':'s'} left.</span>`;
+    const pct=Math.min(100,r.pts/EXAM.full*100);
+    cur=`<div class="rline"><span class="rtitle">${s===state.tech?'無線工学':'法規'} mock exam ${k+1} of ${rs.length}</span><span class="rq">Q${k*EXAM.n+1}–${k*EXAM.n+EXAM.n}</span></div>
+      <div class="meter" role="img" aria-label="${r.pts} of ${EXAM.full} points; pass mark ${EXAM.pass}"><div class="fill ${r.passed?'pass':''}" style="width:${pct}%"></div><div class="mark" style="left:${EXAM.pass/EXAM.full*100}%"></div></div>
+      <div class="rline"><span class="rpts"><b>${r.pts}</b> / ${EXAM.full} pts</span><span class="rnote">Pass mark ${EXAM.pass}</span>${verdict}</div>`;
+  }
+  // overall exam: both subjects
+  const t=subjectResult('tech'), l=subjectResult('law');
+  const part=(name,r)=>!r?`<span class="sub">${name} <em>not finished yet</em></span>`
+    :r.passed?`<span class="sub ok">${name} <b>${r.pts}</b>/60 ✓</span>`
+    :`<span class="sub bad">${name} <b>${r.pts}</b>/60 · needs ${r.need} more</span>`;
+  let overall;
+  if(t&&l&&t.passed&&l.passed) overall=`<span class="chip-res pass">Exam passed 合格</span>`;
+  else if(t&&l) overall=`<span class="chip-res fail">Exam not passed</span><span class="rnote">Needs ${[!t.passed?`${t.need} more in 無線工学`:'',!l.passed?`${l.need} more in 法規`:''].filter(Boolean).join(' and ')}.</span>`;
+  else overall=`<span class="rnote">Finish a 12-question round in both subjects to get an exam result.</span>`;
+  el.innerHTML=cur+`<div class="overall"><span class="rtitle">Exam result</span>${part('無線工学',t)}${part('法規',l)}${overall}</div>`;
+}
+function renderStatus(){
+  const s=S(), done=s.list.filter(x=>x.pick!==null);
+  const ok=done.filter(x=>x.pick===Q[x.i].a).length;
+  $('#status').innerHTML=`<span>Q <b>${s.pos+1}</b> / ${s.list.length}</span><span>Answered <b>${done.length}</b></span><span class="ok">Correct <b>${ok}</b></span><span class="bad">Wrong <b>${done.length-ok}</b></span>`;
+  renderExam();
+  const band=$('#band'); band.innerHTML='';
+  const per=s.practice?s.list.length:EXAM.n;
+  for(let g=0; g<s.list.length; g+=per){
+    const grp=document.createElement('div'); grp.className='round'+(s.practice?' practice':'');
+    const items=s.list.slice(g,g+per);
+    if(!s.practice){
+      const r=roundScore(items), lab=document.createElement('span');
+      lab.className='rlab'+(r.done?(r.passed?' pass':' fail'):'');
+      lab.textContent=`#${g/per+1}`+(r.done?(r.passed?' ✓':' ✗'):'');
+      grp.appendChild(lab);
+    }
+    items.forEach((x,j)=>{
+      const k=g+j, b=document.createElement('button');
+      b.className='cell'+(x.pick===null?'':(x.pick===Q[x.i].a?' ok':' bad'))+(k===s.pos?' cur':'');
+      b.title='Question '+(k+1); b.setAttribute('aria-label','Go to question '+(k+1));
+      b.onclick=()=>{s.pos=k;save();renderQuiz()};
+      grp.appendChild(b);
+    });
+    band.appendChild(grp);
+  }
+  $('#prev').disabled=s.pos===0;
+  $('#next').disabled=s.pos>=s.list.length-1;
+  $('#retry').disabled=!done.some(x=>x.pick!==Q[x.i].a);
+}
+
+function renderQuiz(){
+  const s=S(); const it=s.list[s.pos]; const q=Q[it.i];
+  const answered=it.pick!==null;
+  const vocab=q.v.map(j=>V[j]);
+  let h=`<div class="meta"><span class="pill ${q.c}">${q.c==='tech'?'無線工学':'法規'}</span><span>${esc(q.s)} · 問題${esc(q.k)}</span><a href="${esc(q.u)}" target="_blank" rel="noopener">source ↗</a></div>`;
+  h+=`<div class="qtext">${q.q}</div>`;
+  if(q.x) h+=`<div class="figure">${q.x}</div>`;
+  h+=`<div class="opts" role="group" aria-label="Answer choices">`;
+  it.p.forEach((orig,k)=>{
+    let cls='opt', mark='';
+    if(answered){
+      if(orig===q.a){cls+=' correct';mark='✓ correct'}
+      else if(orig===it.pick){cls+=' wrong';mark='✗ your pick'}
+      else cls+=' dim';
+    }
+    h+=`<button class="${cls}" data-o="${orig}" ${answered?'disabled':''}><span class="num">${k+1}</span><span>${q.o[orig]}</span><span class="mark">${mark}</span></button>`;
+  });
+  h+=`</div>`;
+  if(answered){
+    const right=it.pick===q.a;
+    const pos=it.p.indexOf(q.a)+1;
+    h+= right ? `<div class="verdict ok">正解 Correct!</div>`
+              : `<div class="verdict bad">不正解 Incorrect<span class="ans">Correct answer: ${pos}. ${q.o[q.a]}</span></div>`;
+    h+=`<div class="expl">`;
+    if(q.e) h+=`<div class="xlabel">解説 · Japanese</div><div class="jp">${q.e}</div>`;
+    h+=`<div class="xlabel">Explanation · English${q.eg?' <span class="added">added for this reviewer</span>':''}</div><div class="en-x">${q.ee}</div>`;
+    h+=`</div>`;
+  }
+  // English & vocab dropdown
+  h+=`<details class="en"${state.enOpen?' open':''}><summary>English &amp; vocabulary</summary><div class="en-body">`;
+  h+=`<h4>Question</h4><p>${q.eq?q.eq:q.q.replace(/<div[\s\S]*?<\/div>/g,'')}</p>`;
+  h+=`<h4>Choices</h4><ol>`;
+  it.p.forEach((orig,k)=>{
+    const t=q.eo[orig]||q.o[orig];
+    h+=`<li class="${answered&&orig===q.a?'is-ans':''}"><span>${k+1}</span><div>${t}</div></li>`;
+  });
+  h+=`</ol>`;
+  const mini=(title,ws)=>{
+    if(!ws.length) return '';
+    let t=`<h4>${title}</h4><div class="vwrap"><table class="vmini"><tbody>`;
+    ws.forEach(w=>{t+=`<tr><td>${esc(w.w)}</td><td>${esc(w.r)}</td><td>${esc(w.m)}</td></tr>`});
+    return t+`</tbody></table></div>`;
+  };
+  h+=mini('Technical &amp; law terms',vocab.filter(w=>w.c!=='gen'));
+  h+=mini('Other kanji',vocab.filter(w=>w.c==='gen'));
+  h+=`</div></details>`;
+  const card=$('#card'); card.innerHTML=h;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+    it.pick=+b.dataset.o; save(); renderQuiz();
+  }));
+  card.querySelector('details.en').addEventListener('toggle',e=>{state.enOpen=e.target.open;save()});
+  hideTip();
+  const own=q.v.map(j=>V[j]);
+  annotate(card.querySelector('.qtext'),own);
+  card.querySelectorAll('.opt > span:nth-child(2)').forEach(el=>annotate(el,own));
+  const jp=card.querySelector('.expl .jp'); if(jp) annotate(jp,EXPL_WORDS);
+  const enx=card.querySelector('.expl .en-x');
+  if(enx){ annotate(enx,EXPL_WORDS); annotateEn(enx,q); }
+  renderStatus();
+  typeset(card);
+}
+// --- hover glosses: furigana + English on vocabulary words ---
+// Each word matches any of its surface forms (w.f), e.g. 選ぶ → 選べ; longest form wins.
+const reCache=new Map();
+function wordRe(list){
+  const key=list.map(w=>w.w).join('|');
+  if(reCache.has(key)) return reCache.get(key);
+  const forms=new Map();
+  list.forEach(w=>(w.f||[w.w]).forEach(f=>{ if(!forms.has(f)) forms.set(f,w) }));
+  const src=[...forms.keys()].sort((a,b)=>b.length-a.length).map(f=>f.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+  const val=src.length?{re:new RegExp(src.join('|'),'g'),forms}:null;
+  reCache.set(key,val); return val;
+}
+function annotate(root,list){
+  if(!root||!list.length) return;
+  const wr=wordRe(list); if(!wr) return;
+  const re=wr.re, lookup=(_,t)=>wr.forms.get(t);
+  const inOpt=!!root.closest('.opt');
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>
+    n.parentNode.closest('.kw,mjx-container,script,style')||n.nodeValue.includes('\\')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    const t=n.nodeValue; re.lastIndex=0; let m, last=0; const frag=document.createDocumentFragment(); let hit=false;
+    while((m=re.exec(t))){
+      const w=lookup(list,m[0]); if(!w) continue;
+      hit=true;
+      if(m.index>last) frag.appendChild(document.createTextNode(t.slice(last,m.index)));
+      const s=document.createElement('span');
+      s.className='kw'; s.textContent=m[0]; if(!inOpt) s.tabIndex=0;
+      s.dataset.w=w.w; s.dataset.r=w.r; s.dataset.m=w.m;
+      frag.appendChild(s); last=m.index+m[0].length;
+    }
+    if(!hit) return;
+    if(last<t.length) frag.appendChild(document.createTextNode(t.slice(last)));
+    n.parentNode.replaceChild(frag,n);
+  });
+}
+// English explanations: link English terms (e.g. "radiator") to their Japanese word.
+// Specific terms (w.e) always link; ambiguous ones (w.es) only when that word is in this question.
+function annotateEn(root,q){
+  const own=new Set(q.v);
+  const alias=new Map();
+  V.forEach((w,i)=>{
+    (w.e||[]).forEach(a=>{ const k=a.toLowerCase(); if(!alias.has(k)||own.has(i)) alias.set(k,w) });
+    if(own.has(i)) (w.es||[]).forEach(a=>alias.set(a.toLowerCase(),w));
+  });
+  if(!alias.size) return;
+  const src=[...alias.keys()].sort((a,b)=>b.length-a.length).map(a=>a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/ /g,'\\s+'));
+  const re=new RegExp('\\b('+src.join('|')+')(?:e?s)?\\b','gi');
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>
+    n.parentNode.closest('.kw,mjx-container,script,style')||n.nodeValue.includes('\\')||!/[A-Za-z]/.test(n.nodeValue)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    const t=n.nodeValue; re.lastIndex=0; let m,last=0,hit=false; const frag=document.createDocumentFragment();
+    while((m=re.exec(t))){
+      const w=alias.get(m[1].toLowerCase().replace(/\s+/g,' ')); if(!w) continue;
+      hit=true;
+      if(m.index>last) frag.appendChild(document.createTextNode(t.slice(last,m.index)));
+      const s=document.createElement('span');
+      s.className='kw'; s.textContent=m[0]; s.tabIndex=0;
+      s.dataset.w=w.w; s.dataset.r=w.r; s.dataset.m=w.m;
+      frag.appendChild(s); last=m.index+m[0].length;
+    }
+    if(!hit) return;
+    if(last<t.length) frag.appendChild(document.createTextNode(t.slice(last)));
+    n.parentNode.replaceChild(frag,n);
+  });
+}
+const tip=document.createElement('div'); tip.id='tip'; tip.setAttribute('role','tooltip'); tip.hidden=true;
+document.body.appendChild(tip);
+let tipFor=null;
+function showTip(el){
+  tipFor=el;
+  tip.innerHTML=`<ruby>${esc(el.dataset.w)}<rt>${esc(el.dataset.r)}</rt></ruby><span class="tm">${esc(el.dataset.m)}</span>`;
+  tip.hidden=false;
+  const r=el.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight, vw=document.documentElement.clientWidth;
+  let x=r.left+r.width/2-tw/2; x=Math.max(8,Math.min(vw-tw-8,x));
+  let y=r.top-th-8; if(y<8) y=r.bottom+8;
+  tip.style.left=x+'px'; tip.style.top=y+'px';
+}
+function hideTip(){tip.hidden=true; tipFor=null}
+const kwOf=t=>t&&t.closest?t.closest('.kw'):null;
+let lastPointer='mouse';
+let closedBy=null;
+// Any click or tap anywhere on the page closes an open popup (capture phase, so nothing can swallow it).
+function closeOnPress(e){
+  lastPointer=e.pointerType||'mouse';
+  closedBy=null;
+  if(tipFor){ closedBy=tipFor; hideTip(); }
+}
+document.addEventListener('pointerdown',closeOnPress,true);
+document.addEventListener('mousedown',e=>{ if(tipFor){ closedBy=tipFor; hideTip(); } },true);
+document.addEventListener('touchstart',e=>{ if(tipFor){ closedBy=tipFor; hideTip(); } },{capture:true,passive:true});
+// Mouse/pen: show when the pointer moves onto a word, hide when it moves off.
+document.addEventListener('pointerover',e=>{
+  if(e.pointerType==='touch') return;
+  const k=kwOf(e.target); if(k&&!(e.buttons&1)) showTip(k);
+});
+document.addEventListener('pointerout',e=>{
+  const k=kwOf(e.target);
+  if(k&&tipFor===k&&!k.contains(e.relatedTarget)) hideTip();
+});
+document.documentElement.addEventListener('mouseleave',hideTip);
+window.addEventListener('blur',hideTip);
+// Keyboard: show on Tab focus only.
+document.addEventListener('focusin',e=>{const k=kwOf(e.target); if(k&&k.matches(':focus-visible')) showTip(k)});
+document.addEventListener('focusout',e=>{if(kwOf(e.target)) hideTip()});
+// Touch: tapping a word opens its popup (tapping it again, or anywhere else, closes it).
+document.addEventListener('click',e=>{
+  if(lastPointer!=='touch') return;
+  const k=kwOf(e.target);
+  if(k&&k!==closedBy&&!k.closest('.opt:not(:disabled)')) showTip(k);
+});
+window.addEventListener('scroll',hideTip,{passive:true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape') hideTip()});
+
+function typeset(el){
+  if(window.MathJax&&MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(()=>{});
+  else setTimeout(()=>{if(window.MathJax&&MathJax.typesetPromise) MathJax.typesetPromise([el]).catch(()=>{})},800);
+}
+function go(d){const s=S();s.pos=Math.max(0,Math.min(s.list.length-1,s.pos+d));save();renderQuiz();$('#status').scrollIntoView({block:'nearest'})}
+$('#prev').onclick=()=>go(-1);
+$('#next').onclick=()=>go(1);
+$('#shuffle').onclick=()=>{state[state.view]=fresh(state.view);save();renderQuiz()};
+$('#retry').onclick=()=>{
+  const s=S(); const miss=s.list.filter(x=>x.pick!==null&&x.pick!==Q[x.i].a).map(x=>x.i);
+  if(miss.length){state[state.view]={...fresh(state.view,miss),practice:true};save();renderQuiz()}
+};
+document.addEventListener('keydown',e=>{
+  if(state.view==='vocab'||e.target.tagName==='INPUT') return;
+  if(e.key==='ArrowRight') go(1); else if(e.key==='ArrowLeft') go(-1);
+  else if(/^[1-4]$/.test(e.key)){const b=document.querySelectorAll('#card .opt')[+e.key-1]; if(b&&!b.disabled) b.click()}
+});
+
+// vocab
+let vf='all';
+document.querySelectorAll('.chip').forEach(c=>{
+  const n=c.dataset.f==='all'?V.length:V.filter(w=>w.c===c.dataset.f).length;
+  c.insertAdjacentHTML('beforeend',` <span class="cn">${n}</span>`);
+});
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+  vf=c.dataset.f; document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===c)); renderVocab();
+}));
+$('#vsearch').addEventListener('input',renderVocab);
+$('#vmask').addEventListener('change',e=>{$('#vtable').classList.toggle('masked',e.target.checked)});
+$('#vtable').addEventListener('click',e=>{
+  if(!$('#vtable').classList.contains('masked')) return;
+  const tr=e.target.closest('tr'); if(tr&&tr.parentNode.tagName==='TBODY') tr.classList.toggle('peek');
+});
+function renderVocab(){
+  const q=$('#vsearch').value.trim().toLowerCase();
+  const rows=V.filter(w=>(vf==='all'||w.c===vf)&&(!q||w.w.includes(q)||w.r.includes(q)||w.m.toLowerCase().includes(q)));
+  const row=w=>`<tr><td class="w">${esc(w.w)}</td><td class="r">${esc(w.r)}</td><td class="m">${esc(w.m)}</td><td class="c ${w.c}">${CAT[w.c].toUpperCase()}</td><td class="n">${w.n||'–'}</td></tr>`;
+  const sections=[
+    ['Technical terms','無線工学 · radio engineering vocabulary',rows.filter(w=>w.c==='tech')],
+    ['Law terms','法規 · Radio Act vocabulary',rows.filter(w=>w.c==='law')],
+    ['General kanji','Other words used in the questions and answers',rows.filter(w=>w.c==='gen')]];
+  let html='';
+  sections.forEach(([title,sub,rs])=>{
+    if(!rs.length) return;
+    html+=`<tr class="sec"><td colspan="5"><span>${title}</span> <em>${sub} · ${rs.length}</em></td></tr>`+rs.map(row).join('');
+  });
+  $('#vtable tbody').innerHTML=html||`<tr><td colspan="5" class="empty">No words match “${esc(q)}”.</td></tr>`;
+  $('#vcount').textContent=`${rows.length} of ${V.length} words. “Qs” is how many questions use the word. With “Quiz me” on, tap a row to reveal it.`;
+}
+setView(state.view);
+})();
+</script>
