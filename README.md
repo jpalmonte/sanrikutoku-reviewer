@@ -2,10 +2,10 @@
   <img src="favicon.svg" width="72" alt="">
 </p>
 
-<h1 align="center">3陸特 Reviewer</h1>
+<h1 align="center">第三級陸上特殊無線技士 Reviewer</h1>
 
 <p align="center">
-  📻 Practice app for the <b>第三級陸上特殊無線技士</b> (3rd Class Land Special Radio Operator) exam<br>
+  📻 <b>3陸特</b> · Practice app for the 3rd Class Land Special Radio Operator exam<br>
   <a href="https://jpalmonte.github.io/sanrikutoku-reviewer/"><b>▶ Open the app</b></a>
 </p>
 
