@@ -11,7 +11,7 @@
 
 ## ✨ Features
 
-- 🎲 **132 shuffled questions**: 無線工学 (technical, 60) and 法規 (radio law, 72)
+- 🎲 **120 shuffled questions**: 無線工学 (technical, 54) and 法規 (radio law, 66), with word-for-word duplicates across exams removed
 - 📝 **Mock exams scored like the real one**: 12 questions × 5 pts per subject, pass mark **40/60** in each
 - ✅ **Instant feedback** with Japanese and 🇬🇧 English explanations
 - 🈯 **Hover popups** with furigana and meanings for every kanji

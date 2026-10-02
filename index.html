@@ -81,6 +81,7 @@ nav.tabs::-webkit-scrollbar{display:none}
 .pill{font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:4px;border:1px solid currentColor}
 .pill.tech{color:var(--tech)} .pill.law{color:var(--law)}
 .meta a{color:var(--muted)}
+.meta .also{flex-basis:100%;opacity:.85}
 .qtext{font-size:18px;font-weight:500;margin:0 0 14px;line-height:1.8}
 .qtext img,.figure img,.expl img{display:block;max-width:100%;height:auto;margin:12px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px}
 .qtext div{text-align:center}
@@ -170,7 +171,7 @@ footer a{color:var(--muted)}
 <div class="wrap">
   <header>
     <h1><small>第三級陸上特殊無線技士 · Exam Reviewer</small>3陸特 Reviewer</h1>
-    <div class="dial">132 questions · 11 sets · randomized</div>
+    <div class="dial"><span id="qtotal"></span> questions · 11 sets · randomized</div>
   </header>
 
   <nav class="tabs" role="tablist">
@@ -194,7 +195,7 @@ footer a{color:var(--muted)}
         <button class="btn" id="shuffle">Reshuffle</button>
       </div>
     </div>
-    <p class="note">Scoring follows the official 3陸特 rules from 日本無線協会: each subject is 12 questions at 5 points (60 total), and the pass mark is 40 points per subject. The exam is passed when both 無線工学 and 法規 are passed, so questions are grouped into 12-question mock exams. Questions and answer choices are shuffled. Pick an answer to check it; open “English &amp; vocabulary” under any question for a translation and the kanji it uses. Hover over (or tap) a dotted-underlined word to see its furigana and meaning.</p>
+    <p class="note">Scoring follows the official 3陸特 rules from 日本無線協会: each subject is 12 questions at 5 points (60 total), and the pass mark is 40 points per subject. The exam is passed when both 無線工学 and 法規 are passed, so questions are grouped into 12-question mock exams (leftover questions are extra practice). Word-for-word duplicate questions from different exams appear once, marked “also in”. Questions and answer choices are shuffled. Pick an answer to check it; open “English &amp; vocabulary” under any question for a translation and the kanji it uses. Hover over (or tap) a dotted-underlined word to see its furigana and meaning.</p>
   </section>
 
   <section id="vocabView" role="tabpanel" hidden>
@@ -229,7 +230,7 @@ const EXPL_WORDS=V.filter(w=>w.c!=='gen'||w.w.length>1);
 const CAT={tech:'Technical',law:'Law',gen:'General'};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const KEY='riku3-reviewer-v1';
+const KEY='riku3-reviewer-v2'; // v2: duplicate questions removed, so question numbering changed
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -239,6 +240,7 @@ Q.forEach((q,i)=>pools[q.c].push(i));
 $('#n-tech').textContent=pools.tech.length;
 $('#n-law').textContent=pools.law.length;
 $('#n-vocab').textContent=V.length;
+$('#qtotal').textContent=Q.length;
 
 let state=load();
 function fresh(cat,ids){
@@ -289,7 +291,14 @@ function renderExam(){
   if(!rs.length){
     cur=`<div class="rline"><span class="rtitle">Practice list</span><span class="rnote">Retrying missed questions isn't scored as a mock exam. Reshuffle to start mock exams again.</span></div>`;
   } else {
-    const k=Math.min(Math.floor(s.pos/EXAM.n),rs.length-1), r=roundScore(rs[k]);
+    const k=Math.floor(s.pos/EXAM.n);
+    if(k>=rs.length){
+      const extra=s.list.slice(rs.length*EXAM.n), ea=extra.filter(x=>x.pick!==null), eok=ea.filter(x=>x.pick===Q[x.i].a).length;
+      el.innerHTML=`<div class="rline"><span class="rtitle">Extra practice</span><span class="rq">Q${rs.length*EXAM.n+1}–${s.list.length}</span></div>
+        <div class="rline"><span class="rpts"><b>${eok}</b> / ${extra.length} correct</span><span class="rnote">These ${extra.length} leftover questions aren't enough for a 12-question mock exam, so they aren't scored as pass or fail.</span></div>`+overallHTML();
+      return;
+    }
+    const r=roundScore(rs[k]);
     let verdict;
     if(r.passed) verdict=`<span class="chip-res pass">合格 Passed</span>`;
     else if(r.done) verdict=`<span class="chip-res fail">不合格 Not passed</span><span class="rnote">Needed ${need(r.need)} to pass.</span>`;
@@ -300,7 +309,10 @@ function renderExam(){
       <div class="meter" role="img" aria-label="${r.pts} of ${EXAM.full} points; pass mark ${EXAM.pass}"><div class="fill ${r.passed?'pass':''}" style="width:${pct}%"></div><div class="mark" style="left:${EXAM.pass/EXAM.full*100}%"></div></div>
       <div class="rline"><span class="rpts"><b>${r.pts}</b> / ${EXAM.full} pts</span><span class="rnote">Pass mark ${EXAM.pass}</span>${verdict}</div>`;
   }
-  // overall exam: both subjects
+  el.innerHTML=cur+overallHTML();
+}
+// overall exam: both subjects
+function overallHTML(){
   const t=subjectResult('tech'), l=subjectResult('law');
   const part=(name,r)=>!r?`<span class="sub">${name} <em>not finished yet</em></span>`
     :r.passed?`<span class="sub ok">${name} <b>${r.pts}</b>/60 ✓</span>`
@@ -309,7 +321,7 @@ function renderExam(){
   if(t&&l&&t.passed&&l.passed) overall=`<span class="chip-res pass">Exam passed 合格</span>`;
   else if(t&&l) overall=`<span class="chip-res fail">Exam not passed</span><span class="rnote">Needs ${[!t.passed?`${t.need} more in 無線工学`:'',!l.passed?`${l.need} more in 法規`:''].filter(Boolean).join(' and ')}.</span>`;
   else overall=`<span class="rnote">Finish a 12-question round in both subjects to get an exam result.</span>`;
-  el.innerHTML=cur+`<div class="overall"><span class="rtitle">Exam result</span>${part('無線工学',t)}${part('法規',l)}${overall}</div>`;
+  return `<div class="overall"><span class="rtitle">Exam result</span>${part('無線工学',t)}${part('法規',l)}${overall}</div>`;
 }
 function renderStatus(){
   const s=S(), done=s.list.filter(x=>x.pick!==null);
@@ -322,9 +334,9 @@ function renderStatus(){
     const grp=document.createElement('div'); grp.className='round'+(s.practice?' practice':'');
     const items=s.list.slice(g,g+per);
     if(!s.practice){
-      const r=roundScore(items), lab=document.createElement('span');
-      lab.className='rlab'+(r.done?(r.passed?' pass':' fail'):'');
-      lab.textContent=`#${g/per+1}`+(r.done?(r.passed?' ✓':' ✗'):'');
+      const r=roundScore(items), lab=document.createElement('span'), full=items.length===EXAM.n;
+      lab.className='rlab'+(full&&r.done?(r.passed?' pass':' fail'):'');
+      lab.textContent=full?`#${g/per+1}`+(r.done?(r.passed?' ✓':' ✗'):''):'extra';
       grp.appendChild(lab);
     }
     items.forEach((x,j)=>{
@@ -345,7 +357,7 @@ function renderQuiz(){
   const s=S(); const it=s.list[s.pos]; const q=Q[it.i];
   const answered=it.pick!==null;
   const vocab=q.v.map(j=>V[j]);
-  let h=`<div class="meta"><span class="pill ${q.c}">${q.c==='tech'?'無線工学':'法規'}</span><span>${esc(q.s)} · 問題${esc(q.k)}</span><a href="${esc(q.u)}" target="_blank" rel="noopener">source ↗</a></div>`;
+  let h=`<div class="meta"><span class="pill ${q.c}">${q.c==='tech'?'無線工学':'法規'}</span><span>${esc(q.s)} · 問題${esc(q.k)}</span><a href="${esc(q.u)}" target="_blank" rel="noopener">source ↗</a>${(q.al||[]).length?`<span class="also">also in ${q.al.map(a=>`<a href="${esc(a.u)}" target="_blank" rel="noopener">${esc(a.s)} 問題${esc(a.k)}</a>`).join(', ')}</span>`:''}</div>`;
   h+=`<div class="qtext">${q.q}</div>`;
   if(q.x) h+=`<div class="figure">${q.x}</div>`;
   h+=`<div class="opts" role="group" aria-label="Answer choices">`;
